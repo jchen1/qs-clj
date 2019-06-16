@@ -1,6 +1,6 @@
 (ns qs-clj.core-test
   (:require [clojure.test :refer :all]
-            [qs-clj.core :refer :all]))
+            [qs-clj.server :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
