@@ -4,13 +4,13 @@
 (defmulti exchange-token! (fn [provider system {:keys [grant-type authorization-code refresh-token]}] provider))
 
 (defn- provider->redirect-uri
-  [provider]
-  (format "http://localhost:8080/oauth/%s/callback" (name provider)))
+  [{:keys [base-url]} provider]
+  (format "%s/oauth/%s/callback" base-url (name provider)))
 
 (defn authorize
   [{:keys [query-params] :as request}]
   (if-let [provider (some-> query-params :provider keyword)]
-    (let [redirect-uri (provider->redirect-uri provider)
+    (let [redirect-uri (provider->redirect-uri request provider)
           url (get-authorize-url provider request {:redirect-uri redirect-uri})]
       {:status  301
        :headers {"Location" url}})
@@ -22,7 +22,7 @@
   (let [provider (some-> route-params :provider keyword)
         code (some-> query-params :code)]
     (if (and provider code)
-      (let [redirect-uri (provider->redirect-uri provider)
+      (let [redirect-uri (provider->redirect-uri request provider)
             tokens (exchange-token! provider request {:grant-type :authorization-code
                                                       :authorization-code code
                                                       :redirect-uri redirect-uri})]

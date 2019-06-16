@@ -1,5 +1,6 @@
 (ns qs-clj.server
   (:require [com.stuartsierra.component :as component]
+            [environ.core :refer [env]]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.params :as ring-params]
             [ring.middleware.session :refer [wrap-session]]
@@ -10,7 +11,7 @@
   component/Lifecycle
   (start [this]
     (let [handler (make-handler (:core-system this))
-          web-port (or web-port 8080)
+          web-port (or (-> web-port (Integer.)) 8080)
           server (run-jetty handler {:port web-port
                                      :join? false})]
       (assoc this :server server)))
@@ -26,12 +27,13 @@
          middlewares/wrap-params
          ring-params/wrap-params
          (middlewares/wrap-system system)
-         middlewares/wrap-env) request)))
+         (middlewares/wrap-env env)) request)))
 
 (defn ->webserver-system
-  []
+  [env]
   (let [core-system {}]
     (component/system-map
       :core-system core-system
-      :webserver (component/using (map->WebServer {:make-handler make-handler})
+      :webserver (component/using (map->WebServer {:make-handler make-handler
+                                                   :web-port (:web-port env)})
                                   [:core-system]))))

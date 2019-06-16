@@ -19,6 +19,7 @@
     <orderEntry type="library" name="Leiningen: clj-time:0.14.3" level="project" />
     <orderEntry type="library" name="Leiningen: clj-tuple:0.2.2" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.5" level="project" />
+    <orderEntry type="library" name="Leiningen: com.stuartsierra/component.repl:0.2.0" level="project" />
     <orderEntry type="library" name="Leiningen: com.stuartsierra/component:0.4.0" level="project" />
     <orderEntry type="library" name="Leiningen: com.stuartsierra/dependency:0.2.0" level="project" />
     <orderEntry type="library" name="Leiningen: commons-codec:1.12" level="project" />

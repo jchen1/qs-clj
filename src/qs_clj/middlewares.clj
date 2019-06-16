@@ -1,6 +1,5 @@
 (ns qs-clj.middlewares
-  (:require [environ.core :refer [env]]
-            [qs-clj.common :as common]))
+  (:require [qs-clj.common :as common]))
 
 (defn wrap-params
   [handler]
@@ -11,7 +10,7 @@
         handler)))
 
 (defn wrap-env
-  [handler]
+  [handler env]
   (fn [request]
     (handler (merge request env))))
 

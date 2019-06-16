@@ -8,6 +8,7 @@
                  [clj-http "3.10.0"]
                  [environ "1.1.0"]
                  [ring "1.7.1"]
+                 [com.stuartsierra/component.repl "0.2.0"]
                  [com.stuartsierra/component "0.4.0"]]
-  :profiles {:dev {:plugins [[lein-dotenv "RELEASE"]]}}
+  :plugins [[lein-dotenv "1.0.0"]]
   :repl-options {:init-ns user})

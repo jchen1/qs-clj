@@ -1,20 +1,14 @@
 (ns user
-  (:require [com.stuartsierra.component :as component]
+  (:require [com.stuartsierra.component.user-helpers :refer [dev go set-dev-ns]]
+            [com.stuartsierra.component.repl :refer [reset set-init start stop system]]
+            [com.stuartsierra.component :as component]
+            [environ.core :refer [env]]
             [qs-clj.server :as server]))
 
-(def webserver-system (atom nil))
+(set-dev-ns 'user)
 
-(defn stop
-  []
-  (when (some? @webserver-system)
-    (prn "Stopping system...")
-    (component/stop-system @webserver-system)
-    (reset! webserver-system nil)))
+(defn new-system [_]
+  (component/system-map
+    :webserver (server/->webserver-system env)))
 
-(defn start
-  []
-  (when (some? @webserver-system)
-    (stop))
-  (prn "Starting system...")
-  (let [system (component/start-system (server/->webserver-system))]
-    (reset! webserver-system system)))
+(set-init new-system)
