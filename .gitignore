@@ -10,8 +10,11 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+.DS_Store
 
 .idea/
+datomic-pro*/
+datomic-console*/
 
 # secrets!
 .env

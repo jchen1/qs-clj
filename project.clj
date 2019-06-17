@@ -6,6 +6,7 @@
   :dependencies [[bidi "2.1.6"]
                  [cheshire "5.8.1"]
                  [clj-http "3.10.0"]
+                 [com.datomic/client-pro "0.8.28"]
                  [com.stuartsierra/component "0.4.0"]
                  [com.stuartsierra/component.repl "0.2.0"]
                  [environ "1.1.0"]
