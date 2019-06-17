@@ -5,8 +5,8 @@
   [handler]
   (fn [{:keys [query-params params] :as request}]
     (-> request
-        (update :query-params (fn [m] (common/map-keys m #(if (string? %) (keyword %) %))))
-        (update :params (fn [m] (common/map-keys m #(if (string? %) (keyword %) %))))
+        (update :query-params (fn [m] (common/map-keys #(if (string? %) (keyword %) %) m)))
+        (update :params (fn [m] (common/map-keys #(if (string? %) (keyword %) %) m)))
         handler)))
 
 (defn wrap-env

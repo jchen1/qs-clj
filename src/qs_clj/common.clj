@@ -1,14 +1,15 @@
 (ns qs-clj.common
+  (:require [clojure.string :as string])
   (:import [java.util Base64]))
 
 (defn map-keys
-  [m map-fn]
+  [map-fn m]
   (->> m
        (map (fn [[k v]] [(map-fn k) v]))
        (into {})))
 
 (defn map-vals
-  [m map-fn]
+  [map-fn m]
   (->> m
        (map (fn [[k v]] [k (map-fn v)]))
        (into {})))
@@ -17,3 +18,17 @@
   [s]
   (-> (Base64/getEncoder)
       (.encodeToString (.getBytes s))))
+
+(defn camel-case-to-kabob
+  [s]
+  (cond
+    (string? s) (string/replace s "_" "-")
+    (keyword? s) (keyword (-> s namespace camel-case-to-kabob)
+                          (-> s name camel-case-to-kabob))))
+
+(defn kabob-to-camel-case
+  [s]
+  (cond
+    (string? s) (string/replace s "-" "_")
+    (keyword? s) (keyword (-> s namespace kabob-to-camel-case)
+                          (-> s name kabob-to-camel-case))))
