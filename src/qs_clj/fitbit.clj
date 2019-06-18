@@ -17,7 +17,7 @@
                           :social
                           :weight})
 
-(defmethod oauth/get-authorize-url :fitbit
+(defmethod oauth/get-authorize-url :provider/fitbit
   [_ _ {:keys [scopes redirect-uri]}]
   (let [scopes (->> (or scopes all-scopes)
                     (map name)
@@ -28,7 +28,7 @@
             redirect-uri
             scopes)))
 
-(defmethod oauth/exchange-token! :fitbit
+(defmethod oauth/exchange-token! :provider/fitbit
   [_ system {:keys [grant-type authorization-code refresh-token redirect-uri]}]
   (let [client-secret (:fitbit-client-secret system)
         params (case grant-type
@@ -87,7 +87,7 @@
    :refresh-token refresh-token
    :user-id user-id})
 
-(defmethod data/data-for-day :fitbit
+(defmethod data/data-for-day :provider/fitbit
   [_ {:keys [fitbit] :as system} day opts]
   (->> (keys log-types)
        (map #(api-call fitbit % day))

@@ -4,8 +4,10 @@
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.params :as ring-params]
             [ring.middleware.session :refer [wrap-session]]
+            [qs-clj.db.datomic :as datomic]
             [qs-clj.middlewares :as middlewares]
-            [qs-clj.routes :as routes]))
+            [qs-clj.routes :as routes]
+            [taoensso.timbre :as timbre]))
 
 (defrecord WebServer [web-port make-handler]
   component/Lifecycle
@@ -31,7 +33,10 @@
 
 (defn ->webserver-system
   [env]
-  (let [core-system {}]
+  (timbre/set-level! (-> (or (:log-level env) "warn") keyword))
+  (let [core-system (component/system-map
+                      :db (datomic/map->DatomicDatabase {:uri          (or (:datomic-uri env) "datomic:mem://localhost:4334/dev")
+                                                         :initial-data (datomic/initial-data env)}))]
     (component/system-map
       :core-system core-system
       :webserver (component/using (map->WebServer {:make-handler make-handler

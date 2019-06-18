@@ -1,5 +1,5 @@
-(ns qs-clj.schema)
-
+(ns qs-clj.db.schema
+  (:require [qs-clj.db.fns :refer [db-fns]]))
 
 (def ^:const user-schema
   [{:db/ident :user/id
@@ -12,11 +12,11 @@
     :db/cardinality :db.cardinality/one
     :db/unique :db.unique/identity
     :db/doc "User email"}
-   {:db/ident :user/fitbit-auth
+   {:db/ident :user/oauths
     :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one
+    :db/cardinality :db.cardinality/many
     :db/isComponent true
-    :db/doc "Fitbit auth data"}])
+    :db/doc "OAuth data"}])
 
 (def ^:const oauth-schema
   [{:db/ident :oauth/active-token
@@ -35,6 +35,10 @@
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "The token's provider"}
+   {:db/ident :oauth/user-id
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "The provider user id associated with the token"}
    {:db/ident :oauth/scopes
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/many
@@ -46,4 +50,5 @@
 (def ^:const schema
   (into [] (concat user-schema
                    oauth-schema
-                   providers)))
+                   providers
+                   db-fns)))
