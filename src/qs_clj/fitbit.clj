@@ -28,18 +28,17 @@
             redirect-uri
             scopes)))
 
-(defmethod oauth/exchange-token! :provider/fitbit
-  [_ system {:keys [grant-type authorization-code refresh-token redirect-uri]}]
-  (let [client-secret (:fitbit-client-secret system)
-        params (case grant-type
+(defmethod oauth/exchange-token* :provider/fitbit
+  [_ {:keys [fitbit]} {:keys [grant-type authorization-code refresh-token redirect-uri]}]
+  (let [params (case grant-type
                  :authorization-code  {:code authorization-code}
                  :refresh-token       {:refresh_token refresh-token})]
     (->> (http/post
            (format "%s/oauth2/token" base-url)
-           {:basic-auth  [client-id client-secret]
+           {:basic-auth  [client-id (:client-secret fitbit)]
             :form-params (merge {:client_id    client-id
                                  :redirect_uri redirect-uri
-                                 :grant_type (-> grant-type name common/kabob-to-camel-case)}
+                                 :grant_type   (-> grant-type name common/kabob-to-camel-case)}
                                 params)
             :accept      :json
             :as          :json})
@@ -56,14 +55,15 @@
                  :fragment    "sleep"}
      :activity  {:api-version 1
                  :fragment    "activities"}}
-    (->> [:heart :calories :caloriesBMR :steps :distance :floors :elevation :minutesSedentary :minutesLightlyActive :minutesFairlyActive :minutesVeryActive :activityCalories]
+    ;; other available data: :minutesSedentary :minutesLightlyActive :minutesFairlyActive :minutesVeryActive :activityCalories
+    (->> [:heart :calories :caloriesBMR :steps :distance :floors :elevation]
          (map (fn [a] [a {:api-version 1
                           :fragment    (format "activities/%s" (name a))
                           :period      "1d"}]))
          (into {}))))
 
 (defn api-call
-  [client log-type date]
+  [{:keys [user-id access-token]} log-type date]
   (let [{:keys [api-version fragment period]} (log-types log-type)
         date (if period
                (format "%s/%s" date period)
@@ -71,26 +71,24 @@
         url (format "%s/%s/user/%s/%s/date/%s.json"
                     base-url
                     api-version
-                    (:user-id client)
+                    user-id
                     fragment
                     date)]
     (->> (http/get
            url
-           {:headers {"Authorization" (format "Bearer %s" (:access-token client))}
+           {:headers {"Authorization" (format "Bearer %s" access-token)}
             :as :json})
          :body
          (common/map-keys common/camel-case-to-kabob))))
 
 (defn new-client
-  [user-id access-token refresh-token]
-  {:access-token access-token
-   :refresh-token refresh-token
-   :user-id user-id})
+  [{:keys [fitbit-client-secret]}]
+  {:client-secret fitbit-client-secret})
 
-(defmethod data/data-for-day :provider/fitbit
-  [_ {:keys [fitbit] :as system} day opts]
+(defmethod data/data-for-day* :provider/fitbit
+  [_ {:keys [user-id access-token] :as token} day opts]
   (->> (keys log-types)
-       (map #(api-call fitbit % day))
+       (pmap #(api-call token % day))
        (doall)))
 
 (comment

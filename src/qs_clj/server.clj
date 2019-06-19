@@ -2,9 +2,11 @@
   (:require [com.stuartsierra.component :as component]
             [environ.core :refer [env]]
             [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.json :refer [wrap-json-response]]
             [ring.middleware.params :as ring-params]
             [ring.middleware.session :refer [wrap-session]]
             [qs-clj.db.datomic :as datomic]
+            [qs-clj.fitbit :as fitbit]
             [qs-clj.middlewares :as middlewares]
             [qs-clj.routes :as routes]
             [taoensso.timbre :as timbre]))
@@ -25,9 +27,14 @@
   [system]
   (fn [request]
     ((-> #'routes/handler
+         ;; response
+         wrap-json-response
+         ;; request
          wrap-session
          middlewares/wrap-params
          ring-params/wrap-params
+         middlewares/wrap-admin-user
+         middlewares/wrap-db
          (middlewares/wrap-system system)
          (middlewares/wrap-env env)) request)))
 
@@ -35,8 +42,9 @@
   [env]
   (timbre/set-level! (-> (or (:log-level env) "warn") keyword))
   (let [core-system (component/system-map
-                      :db (datomic/map->DatomicDatabase {:uri          (or (:datomic-uri env) "datomic:mem://localhost:4334/dev")
-                                                         :initial-data (datomic/initial-data env)}))]
+                      :db-wrapper (datomic/map->DatomicDatabase {:uri          (or (:datomic-uri env) "datomic:mem://localhost:4334/dev")
+                                                                 :initial-data (datomic/initial-data env)})
+                      :fitbit (fitbit/new-client env))]
     (component/system-map
       :core-system core-system
       :webserver (component/using (map->WebServer {:make-handler make-handler

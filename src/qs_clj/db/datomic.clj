@@ -30,6 +30,10 @@
   schema
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
+        conn (d/connect uri)]
+    (keys (d/db conn)))
+  (let [uri "datomic:mem://localhost:4334/dev"
+        _ (create-db uri)
         conn (d/connect uri)
         tx [{:user/email       "hello@jeff.yt"
              :user/fitbit-auth {:oauth/active-token            "asdf"
