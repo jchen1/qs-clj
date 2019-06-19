@@ -1,6 +1,7 @@
 (ns qs-clj.data
-  (:require [cheshire.core :as json]
-            [qs-clj.oauth :as oauth]))
+  (:require [qs-clj.oauth :as oauth]
+            [ring.util.codec :refer [url-encode]]
+            [ring.util.request :refer [request-url]]))
 
 (defmulti data-for-day* (fn [provider {:keys [user-id access-token] :as token} day opts] provider))
 
@@ -14,8 +15,10 @@
         (let [result (into {} (data-for-day* provider tokens day {}))]
           {:status 200
            :body   result})
-        ;; todo save the expected url
         {:status  302
-         :headers {"Location" (format "/oauth/authorize?provider=%s" (name provider))}})
+         :headers {"Location" (format "/oauth/authorize?provider=%s&redirect-uri=%s"
+                                      (name provider)
+                                      (-> (request-url system)
+                                          url-encode))}})
       {:status 400
        :body   "`provider` and `day` are required."})))

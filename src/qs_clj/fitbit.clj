@@ -18,18 +18,19 @@
                           :weight})
 
 (defmethod oauth/get-authorize-url :provider/fitbit
-  [_ _ {:keys [scopes redirect-uri]}]
+  [_ _ {:keys [scopes callback-uri redirect-uri]}]
   (let [scopes (->> (or scopes all-scopes)
                     (map name)
                     (str/join " "))]
-    (format "%s/oauth2/authorize?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&expires_in=604800"
+    (format "%s/oauth2/authorize?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&expires_in=604800&state=%s"
             "https://www.fitbit.com"                        ;; fuck fitbit for real
             client-id
-            redirect-uri
-            scopes)))
+            callback-uri
+            scopes
+            redirect-uri)))
 
 (defmethod oauth/exchange-token* :provider/fitbit
-  [_ {:keys [fitbit]} {:keys [grant-type authorization-code refresh-token redirect-uri]}]
+  [_ {:keys [fitbit]} {:keys [grant-type authorization-code refresh-token callback-uri]}]
   (let [params (case grant-type
                  :authorization-code  {:code authorization-code}
                  :refresh-token       {:refresh_token refresh-token})]
@@ -37,7 +38,7 @@
            (format "%s/oauth2/token" base-url)
            {:basic-auth  [client-id (:client-secret fitbit)]
             :form-params (merge {:client_id    client-id
-                                 :redirect_uri redirect-uri
+                                 :redirect_uri callback-uri
                                  :grant_type   (-> grant-type name common/kabob-to-camel-case)}
                                 params)
             :accept      :json
@@ -88,8 +89,9 @@
 (defmethod data/data-for-day* :provider/fitbit
   [_ {:keys [user-id access-token] :as token} day opts]
   (->> (keys log-types)
-       (pmap #(api-call token % day))
-       (doall)))
+       (pmap #(do [% (api-call token % day)]))
+       (doall)
+       (into {})))
 
 (comment
   (let [redirect-uri "http://localhost:8080/oauth/fitbit/callback"

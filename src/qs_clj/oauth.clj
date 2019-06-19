@@ -1,12 +1,13 @@
 (ns qs-clj.oauth
   (:require [datomic.api :as d]
             [clojure.string :as string]
-            [java-time :as time]))
+            [java-time :as time]
+            [ring.util.codec :refer [url-encode url-decode]]))
 
-(defmulti get-authorize-url (fn [provider system {:keys [scopes redirect-uri]}] provider))
+(defmulti get-authorize-url (fn [provider system {:keys [scopes callback-uri redirect-uri]}] provider))
 (defmulti exchange-token* (fn [provider system {:keys [grant-type authorization-code refresh-token]}] provider))
 
-(defn- provider->redirect-uri
+(defn- provider->callback-uri
   [{:keys [base-url]} provider]
   (format "%s/oauth/%s/callback" base-url (name provider)))
 
@@ -40,8 +41,10 @@
 (defn authorize
   [{:keys [query-params] :as request}]
   (if-let [provider (some->> query-params :provider (keyword "provider"))]
-    (let [redirect-uri (provider->redirect-uri request provider)
-          url (get-authorize-url provider request {:redirect-uri redirect-uri})]
+    (let [callback-uri (provider->callback-uri request provider)
+          redirect-uri (some->> query-params :redirect-uri)
+          url (get-authorize-url provider request {:callback-uri (url-encode callback-uri)
+                                                   :redirect-uri (url-encode redirect-uri)})]
       {:status  302
        :headers {"Location" url}})
     {:status 400
@@ -50,19 +53,23 @@
 (defn callback
   [{:keys [route-params query-params admin-user] :as request}]
   (let [provider (some->> route-params :provider (keyword "provider"))
-        code (some-> query-params :code)]
+        code (some-> query-params :code)
+        redirect-uri (some-> query-params :state url-decode)]
     (if (and provider code)
-      (let [redirect-uri (provider->redirect-uri request provider)
+      (let [callback-uri (provider->callback-uri request provider)
             params {:grant-type :authorization-code
                     :authorization-code code
-                    :redirect-uri redirect-uri}
+                    :callback-uri callback-uri}
             {:keys [db-after]} (exchange-token! request provider params)]
-        {:status 200
-         :body   (format "Hello, %s!"
-                         (->> (d/entity db-after (:db/id admin-user))
-                              :user/oauths
-                              (map #(into {} %))
-                              vec))})
+        (if redirect-uri
+          {:status  302
+           :headers {"Location" redirect-uri}}
+          {:status 200
+           :body   (format "Hello, %s!"
+                           (->> (d/entity db-after (:db/id admin-user))
+                                :user/oauths
+                                (map #(into {} %))
+                                vec))}))
       {:status 400
        :body   "`provider` is required."})))
 
@@ -76,7 +83,7 @@
           (if (time/after? (time/instant) (time/instant (:oauth/active-token-expiration token)))
             (let [{:keys [db-after]} (exchange-token! provider system {:grant-type    :refresh-token
                                                                        :refresh-token (:oauth/refresh-token token)
-                                                                       :redirect-uri  (provider->redirect-uri system provider)})
+                                                                       :callback-uri  (provider->callback-uri system provider)})
                   user (d/entity db-after (:db/id admin-user))]
               (->> user
                    :user/oauths
