@@ -1,17 +1,24 @@
 (ns qs-clj.common
-  (:require [clojure.string :as string])
+  (:require [clojure.walk :refer [postwalk]]
+            [clojure.string :as string])
   (:import [java.util Base64]))
 
 (defn map-keys
-  [map-fn m]
+  [f m]
   (->> m
-       (map (fn [[k v]] [(map-fn k) v]))
+       (map (fn [[k v]] [(f k) v]))
        (into {})))
 
+(defn deep-map-keys
+  [f m]
+  (postwalk
+    (fn [m] (cond->> m (map? m) (map-keys f)))
+    m))
+
 (defn map-vals
-  [map-fn m]
+  [f m]
   (->> m
-       (map (fn [[k v]] [k (map-fn v)]))
+       (map (fn [[k v]] [k (f v)]))
        (into {})))
 
 (defn encode-base64-str
@@ -19,16 +26,34 @@
   (-> (Base64/getEncoder)
       (.encodeToString (.getBytes s))))
 
-(defn camel-case-to-kabob
+(defn snake->kabob
   [s]
   (cond
     (string? s) (string/replace s "_" "-")
-    (keyword? s) (keyword (-> s namespace camel-case-to-kabob)
-                          (-> s name camel-case-to-kabob))))
+    (keyword? s) (keyword (-> s namespace snake->kabob)
+                          (-> s name snake->kabob))))
 
-(defn kabob-to-camel-case
+(defn kabob->snake
   [s]
   (cond
     (string? s) (string/replace s "-" "_")
-    (keyword? s) (keyword (-> s namespace kabob-to-camel-case)
-                          (-> s name kabob-to-camel-case))))
+    (keyword? s) (keyword (-> s namespace kabob->snake)
+                          (-> s name kabob->snake))))
+
+;; todo handle capital first letter
+(defn camel->kebab
+  [s]
+  (cond
+    (string? s) (string/lower-case (string/replace s #"[A-Z0-9]+" (partial str "-")))
+    (keyword? s) (keyword (-> s namespace camel->kebab)
+                          (-> s name camel->kebab))))
+
+(defn kebab->camel
+  [s]
+  (cond
+    (string? s) (string/replace s #"-(\w)" (comp string/upper-case second))
+    (keyword? s) (keyword (-> s namespace kebab->camel)
+                          (-> s name kebab->camel))))
+
+(comment
+  (camel->kebab "caloriesBMR"))

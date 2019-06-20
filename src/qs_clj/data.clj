@@ -5,6 +5,7 @@
             [datomic.api :as d]))
 
 (defmulti data-for-day* (fn [provider {:keys [admin-user] :as system} {:keys [user-id access-token] :as token} day opts] provider))
+(defmulti first-day-with-data* (fn [provider system token] provider))
 
 (defn load-data-for-day
   [{:keys [admin-user connection query-params] :as system}]

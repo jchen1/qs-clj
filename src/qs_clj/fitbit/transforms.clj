@@ -21,12 +21,11 @@
                :provider :provider/fitbit
                :type :quantity/fat
                :value fat
-               ;; todo semantics here??
                :start (->inst date time)
                :end (->inst date time)}))
        (map measurements/->quantity-measurement)))
 
-
+;; todo deep map camel case...
 (defmethod transform :weight
   [_ {:keys [admin-user]} {:keys [weight]}]
   (->> weight
@@ -35,7 +34,6 @@
                :provider :provider/fitbit
                :type :quantity/weight
                :value (units/kgs->lbs weight)
-               ;; todo semantics here??
                :start (->inst date time)
                :end (->inst date time)}))
        (map measurements/->quantity-measurement)))
@@ -44,17 +42,17 @@
   [_ {:keys [admin-user]} {:keys [sleep]}]
   (->> sleep
        ;; todo figure out daily summaries...
-       (mapcat (fn [{:keys [dateOfSleep type levels]}]
+       (mapcat (fn [{:keys [date-of-sleep type levels]}]
                  ;; todo handle not-stage sleep
                  (when (= type "stages")
                    (->> (:data levels)
-                        (map (fn [{:keys [dateTime level seconds]}]
+                        (map (fn [{:keys [date-time level seconds]}]
                                {:user-eid (:db/id admin-user)
                                 :provider :provider/fitbit
                                 :type     :category/sleep
                                 :value    (keyword "sleep" level)
-                                :start    (-> dateTime time/local-date-time time/sql-timestamp)
-                                :end      (-> dateTime time/local-date-time (time/plus (time/seconds (Integer. seconds))) time/sql-timestamp)}))))))
+                                :start    (-> date-time time/local-date-time time/sql-timestamp)
+                                :end      (-> date-time time/local-date-time (time/plus (time/seconds (Integer. seconds))) time/sql-timestamp)}))))))
        (map measurements/->category-measurement)))
 
 (comment
