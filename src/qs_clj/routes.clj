@@ -16,7 +16,7 @@
 (def routes ["/" {""       #'index
                   "oauth/" {[:provider "/callback"] #'oauth/callback
                             "authorize"             #'oauth/authorize}
-                  "data/"  {"day" #'data/data-for-day}
+                  "data/"  {"day" #'data/load-data-for-day}
                   true     #'not-found}])
 
 (def handler

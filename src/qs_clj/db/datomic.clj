@@ -31,7 +31,8 @@
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
         conn (d/connect uri)]
-    (keys (d/db conn)))
+    (into {} (d/entity (d/db conn) #_[:user/email "hello@jeff.yt"] [:quantity-measurement/key #uuid "2a150458-e515-5f62-aff1-1b6be900ad6d"])))
+
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
         conn (d/connect uri)

@@ -1,18 +1,20 @@
 (ns qs-clj.data
   (:require [qs-clj.oauth :as oauth]
             [ring.util.codec :refer [url-encode]]
-            [ring.util.request :refer [request-url]]))
+            [ring.util.request :refer [request-url]]
+            [datomic.api :as d]))
 
 (defmulti data-for-day* (fn [provider {:keys [admin-user] :as system} {:keys [user-id access-token] :as token} day opts] provider))
 
-(defn data-for-day
-  [{:keys [admin-user query-params] :as system}]
+(defn load-data-for-day
+  [{:keys [admin-user connection query-params] :as system}]
   (let [provider (some->> query-params :provider (keyword "provider"))
         ;; todo check this is yyyy-mm-dd
         day (some->> query-params :day)]
     (if (and provider day)
       (if-let [tokens (oauth/token-for-provider system provider)]
         (let [result (data-for-day* provider system tokens day {})]
+          @(d/transact connection result)
           {:status 200
            :body   result})
         {:status  302

@@ -101,7 +101,7 @@
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
     :db/doc "When the measurement ended"}
-   {:db/ident :category-measurements/key
+   {:db/ident :category-measurement/key
     :db/valueType :db.type/uuid
     :db/unique :db.unique/identity
     :db/cardinality :db.cardinality/one

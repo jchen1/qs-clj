@@ -12,13 +12,13 @@
   {:pre [#_(time/after? end start)
          (contains? (-> enums/quantity->unit keys set) type)
          (contains? enums/providers provider)]}
-  {:quantity-measurement/user user-eid
+  {:quantity-measurement/user     user-eid
    :quantity-measurement/provider provider
-   :quantity-measurement/key (->dedup-key quantity)
-   :quantity-measurement/type type
-   :quantity-measurement/value value
-   :quantity-measurement/start start
-   :quantity-measurement/end end})
+   :quantity-measurement/key      (->dedup-key quantity)
+   :quantity-measurement/type     type
+   :quantity-measurement/value    (bigdec value)
+   :quantity-measurement/start    start
+   :quantity-measurement/end      end})
 
 (defn ->category-measurement
   [{:keys [user-eid provider type value start end] :as quantity}]
