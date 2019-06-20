@@ -1,5 +1,6 @@
 (ns qs-clj.db.schema
-  (:require [qs-clj.db.fns :refer [db-fns]]))
+  (:require [qs-clj.db.enums :as enums]
+            [qs-clj.db.fns :refer [db-fns]]))
 
 (def ^:const user-schema
   [{:db/ident :user/id
@@ -44,11 +45,72 @@
     :db/cardinality :db.cardinality/many
     :db/doc "Scopes associated with the token"}])
 
-(def ^:const providers
-  [{:db/ident :provider/fitbit}])
+(def ^:const quantity-measurement-schema
+  [{:db/ident :quantity-measurement/user
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "User the measurement belongs to"}
+   {:db/ident :quantity-measurement/type
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Type of the measurement"}
+   {:db/ident :quantity-measurement/provider
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Which provider sent the data"}
+   {:db/ident :quantity-measurement/value
+    :db/valueType :db.type/bigdec
+    :db/cardinality :db.cardinality/one
+    :db/doc "Measurement value"}
+   {:db/ident :quantity-measurement/start
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "When the measurement started"}
+   {:db/ident :quantity-measurement/end
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "When the measurement ended"}
+   {:db/ident :quantity-measurement/key
+    :db/valueType :db.type/uuid
+    :db/unique :db.unique/identity
+    :db/cardinality :db.cardinality/one
+    :db/doc "Dedup key for measurements"}])
+
+(def ^:const category-measurement-schema
+  [{:db/ident :category-measurement/user
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "User the measurement belongs to"}
+   {:db/ident :category-measurement/type
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Type of the measurement"}
+   {:db/ident :category-measurement/provider
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Which provider sent the data"}
+   {:db/ident :category-measurement/value
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Measurement value - must be an enum value"}
+   {:db/ident :category-measurement/start
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "When the measurement started"}
+   {:db/ident :category-measurement/end
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "When the measurement ended"}
+   {:db/ident :category-measurements/key
+    :db/valueType :db.type/uuid
+    :db/unique :db.unique/identity
+    :db/cardinality :db.cardinality/one
+    :db/doc "Dedup key for measurements"}])
 
 (def ^:const schema
   (into [] (concat user-schema
                    oauth-schema
-                   providers
+                   quantity-measurement-schema
+                   category-measurement-schema
+                   enums/all-enums
                    db-fns)))

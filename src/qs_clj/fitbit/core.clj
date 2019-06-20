@@ -1,8 +1,9 @@
-(ns qs-clj.fitbit
+(ns qs-clj.fitbit.core
   (:require [clojure.string :as str]
             [clj-http.client :as http]
             [qs-clj.common :as common]
             [qs-clj.data :as data]
+            [qs-clj.fitbit.transforms :as transforms]
             [qs-clj.oauth :as oauth]))
 
 (def ^:const base-url "https://api.fitbit.com")
@@ -87,13 +88,15 @@
   {:client-secret fitbit-client-secret})
 
 (defmethod data/data-for-day* :provider/fitbit
-  [_ {:keys [user-id access-token] :as token} day opts]
+  [_ system token day opts]
   (->> (keys log-types)
+       (filter #(contains? (->> (methods transforms/transform) keys set) %))
        (pmap #(do [% (api-call token % day)]))
-       (doall)
-       (into {})))
+       (mapcat (fn [[type data]] (transforms/transform type system data)))
+       (doall)))
 
 (comment
+  (->> (methods transforms/transform) keys)
   (let [redirect-uri "http://localhost:8080/oauth/fitbit/callback"
         authorize-url (oauth/get-authorize-url :fitbit {} {:redirect-uri redirect-uri})]
     authorize-url))

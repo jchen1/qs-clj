@@ -13,6 +13,7 @@
                  [com.stuartsierra/component.repl "0.2.0"]
                  [com.taoensso/timbre "4.10.0"]
                  [environ "1.1.0"]
+                 [io.replikativ/hasch "0.3.5"]
                  [org.clojure/clojure "1.10.0"]
                  [org.eclipse.jetty/jetty-http "9.4.12.v20180830"]
                  [org.slf4j/log4j-over-slf4j "1.7.14"]

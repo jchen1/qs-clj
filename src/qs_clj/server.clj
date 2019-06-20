@@ -6,7 +6,7 @@
             [ring.middleware.params :as ring-params]
             [ring.middleware.session :refer [wrap-session]]
             [qs-clj.db.datomic :as datomic]
-            [qs-clj.fitbit :as fitbit]
+            [qs-clj.fitbit.core :as fitbit]
             [qs-clj.middlewares :as middlewares]
             [qs-clj.routes :as routes]
             [taoensso.timbre :as timbre]))
