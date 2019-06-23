@@ -3,11 +3,11 @@
             [clj-http.client :as http]
             [qs-clj.common :as common]
             [qs-clj.data :as data]
+            [qs-clj.fitbit.api :as api]
             [qs-clj.fitbit.transforms :as transforms]
             [qs-clj.oauth :as oauth]
             [java-time :as time]))
 
-(def ^:const base-url "https://api.fitbit.com")
 (def ^:const client-id "22DFW9")
 (def ^:const all-scopes #{:activity
                           :heartrate
@@ -33,25 +33,13 @@
 
 (defmethod oauth/exchange-token* :provider/fitbit
   [_ {:keys [fitbit]} {:keys [grant-type authorization-code refresh-token callback-uri]}]
-  (let [params (case grant-type
-                 :authorization-code  {:code authorization-code}
-                 :refresh-token       {:refresh_token refresh-token})]
-    (->> (http/post
-           (format "%s/oauth2/token" base-url)
-           {:basic-auth  [client-id (:client-secret fitbit)]
-            :form-params (merge {:client_id    client-id
-                                 :redirect_uri callback-uri
-                                 :grant_type   (-> grant-type name common/kabob->snake)}
-                                params)
-            :accept      :json
-            :as          :json})
-         :body
-         (common/map-keys common/snake->kabob))))
-
-(defn authorized-get
-  [url {:keys [access-token] :as token}]
-  (http/get url {:headers {"Authorization" (format "Bearer %s" access-token)}
-                 :as      :json}))
+  (let [params (merge (case grant-type
+                        :authorization-code {:code authorization-code}
+                        :refresh-token {:refresh-token refresh-token})
+                      {:client-id    client-id
+                       :redirect-uri callback-uri
+                       :grant-type   (-> grant-type name common/kabob->snake)})]
+    (api/get-oauth-token fitbit params)))
 
 (def ^:const log-types
   (merge
@@ -76,19 +64,17 @@
         date (if period
                (format "%s/%s" date period)
                date)
-        url (format "%s/%s/user/%s/%s/date/%s.json"
-                    base-url
+        url (format "%s/user/%s/%s/date/%s.json"
                     api-version
                     user-id
                     fragment
                     date)]
-    (->> (authorized-get url token)
-         :body
-         (common/deep-map-keys common/camel->kebab))))
+    (api/authorized-request url token)))
 
 (defn new-client
   [{:keys [fitbit-client-secret]}]
-  {:client-secret fitbit-client-secret})
+  {:client-id client-id
+   :client-secret fitbit-client-secret})
 
 (defmethod data/data-for-day* :provider/fitbit
   [_ system token day opts]
@@ -100,10 +86,8 @@
 
 (defmethod data/first-day-with-data* :provider/fitbit
   [_ system {:keys [user-id] :as token}]
-  (let [url (format "%s/1/user/%s/badges.json" base-url user-id)]
-    (->> (authorized-get url token)
-         :body
-         (common/deep-map-keys common/camel->kebab)
+  (let [url (format "1/user/%s/badges.json" user-id)]
+    (->> (api/authorized-request url token)
          :badges
          (map :date-time)
          (map time/local-date)

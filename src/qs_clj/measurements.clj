@@ -18,7 +18,7 @@
    :quantity-measurement/type     type
    :quantity-measurement/value    (bigdec value)
    :quantity-measurement/start    start
-   :quantity-measurement/end      end})
+   :quantity-measurement/end      (or end start)})
 
 (defn ->category-measurement
   [{:keys [user-eid provider type value start end] :as quantity}]
@@ -32,4 +32,4 @@
    :category-measurement/type type
    :category-measurement/value value
    :category-measurement/start start
-   :category-measurement/end end})
+   :category-measurement/end (or end start)})

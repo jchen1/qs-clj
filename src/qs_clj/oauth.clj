@@ -81,7 +81,7 @@
                               (filter #(= (:oauth/provider %) provider))
                               first)]
           (if (time/after? (time/instant) (time/instant (:oauth/active-token-expiration token)))
-            (let [{:keys [db-after]} (exchange-token! provider system {:grant-type    :refresh-token
+            (let [{:keys [db-after]} (exchange-token! system provider {:grant-type    :refresh-token
                                                                        :refresh-token (:oauth/refresh-token token)
                                                                        :callback-uri  (provider->callback-uri system provider)})
                   user (d/entity db-after (:db/id admin-user))]

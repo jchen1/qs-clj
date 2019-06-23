@@ -10,12 +10,13 @@
 (defn load-data-for-day
   [{:keys [admin-user connection query-params] :as system}]
   (let [provider (some->> query-params :provider (keyword "provider"))
+        debug? (some->> query-params :debug)
         ;; todo check this is yyyy-mm-dd
         day (some->> query-params :day)]
     (if (and provider day)
       (if-let [tokens (oauth/token-for-provider system provider)]
         (let [result (data-for-day* provider system tokens day {})]
-          @(d/transact connection result)
+          (when-not debug? @(d/transact connection result))
           {:status 200
            :body   result})
         {:status  302

@@ -107,10 +107,31 @@
     :db/cardinality :db.cardinality/one
     :db/doc "Dedup key for measurements"}])
 
+(def ingest-queue-schema
+  [{:db/ident :ingest-queue/provider
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "Data to be ingested for a provider"}
+   {:db/ident :ingest-queue/queue
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/many
+    :db/isComponent true
+    :db/doc "The queue of items to ingest"}
+   {:db/ident :ingest-queue-item/time
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "Inst of the api call to make"}
+   {:db/ident :ingest-queue-item/type
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Type of api call to make"}])
+
 (def ^:const schema
   (into [] (concat user-schema
                    oauth-schema
                    quantity-measurement-schema
                    category-measurement-schema
+                   ingest-queue-schema
                    enums/all-enums
                    db-fns)))
