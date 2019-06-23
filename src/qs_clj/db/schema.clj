@@ -118,14 +118,15 @@
     :db/cardinality :db.cardinality/many
     :db/isComponent true
     :db/doc "The queue of items to ingest"}
-   {:db/ident :ingest-queue-item/time
+   {:db/ident :ingest-queue-item/date
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
     :db/doc "Inst of the api call to make"}
-   {:db/ident :ingest-queue-item/type
-    :db/valueType :db.type/ref
+   {:db/ident :ingest-queue-item/key
+    :db/valueType :db.type/uuid
     :db/cardinality :db.cardinality/one
-    :db/doc "Type of api call to make"}])
+    :db/unique :db.unique/identity
+    :db/doc "Unique key for a queue item"}])
 
 (def ^:const schema
   (into [] (concat user-schema

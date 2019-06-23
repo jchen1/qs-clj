@@ -70,10 +70,16 @@
     <orderEntry type="library" name="Leiningen: org.apache.tomcat/tomcat-jdbc:7.0.27" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.tomcat/tomcat-juli:7.0.27" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/clojure:1.10.0" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/core.async:0.4.500" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/core.cache:0.6.5" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/core.memoize:0.5.9" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.specs.alpha:0.2.44" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/data.codec:0.1.1" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/data.priority-map:0.0.7" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/java.classpath:0.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/spec.alpha:0.2.176" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer.jvm:0.7.2" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer:0.6.9" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.cli:0.3.5" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.namespace:0.2.11" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.reader:0.10.0" level="project" />
@@ -85,6 +91,7 @@
     <orderEntry type="library" name="Leiningen: org.eclipse.jetty/jetty-util:9.4.12.v20180830" level="project" />
     <orderEntry type="library" name="Leiningen: org.fressian/fressian:0.6.5" level="project" />
     <orderEntry type="library" name="Leiningen: org.jboss.logging/jboss-logging:3.3.0.Final" level="project" />
+    <orderEntry type="library" name="Leiningen: org.ow2.asm/asm-all:4.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.slf4j/jcl-over-slf4j:1.7.14" level="project" />
     <orderEntry type="library" name="Leiningen: org.slf4j/jul-to-slf4j:1.7.14" level="project" />
     <orderEntry type="library" name="Leiningen: org.slf4j/log4j-over-slf4j:1.7.14" level="project" />

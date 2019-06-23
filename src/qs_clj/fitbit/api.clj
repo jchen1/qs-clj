@@ -1,6 +1,7 @@
 (ns qs-clj.fitbit.api
   (:require [clj-http.client :as http]
-            [qs-clj.common :as common]))
+            [qs-clj.common :as common]
+            [clojure.set :as set]))
 
 (def ^:const api-base-url "https://api.fitbit.com")
 
@@ -15,12 +16,18 @@
        :body
        (common/map-keys common/snake->kabob)))
 
+;; todo: handle rate limits
 (defn authorized-request
   [url {:keys [access-token] :as token}]
-  (->>
-    (http/get (format "%s/%s" api-base-url url)
-              {:headers {"Authorization" (format "Bearer %s" access-token)}
-               :as      :json})
-    :body
-    (common/deep-map-keys common/camel->kebab)))
+  (let [response (http/get (format "%s/%s" api-base-url url)
+                           {:headers              {"Authorization" (format "Bearer %s" access-token)}
+                            :unexceptional-status (set/union http/unexceptional-status? #{429})
+                            :as                   :json})]
+    (case (:status response)
+      429 (throw (ex-info "Rate limited" {:retry-after (->> response :headers "retry-after" (Integer.))
+                                          :response response}))
+      (->>
+        response
+        :body
+        (common/deep-map-keys common/camel->kebab)))))
 

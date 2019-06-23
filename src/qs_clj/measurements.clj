@@ -1,6 +1,5 @@
 (ns qs-clj.measurements
   (:require [hasch.core :as hasch]
-            [java-time :as time]
             [qs-clj.db.enums :as enums]))
 
 (defn- ->dedup-key

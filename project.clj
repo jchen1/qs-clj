@@ -15,6 +15,7 @@
                  [environ "1.1.0"]
                  [io.replikativ/hasch "0.3.5"]
                  [org.clojure/clojure "1.10.0"]
+                 [org.clojure/core.async "0.4.500"]
                  [org.eclipse.jetty/jetty-http "9.4.12.v20180830"]
                  [org.slf4j/log4j-over-slf4j "1.7.14"]
                  [org.slf4j/jul-to-slf4j "1.7.14"]

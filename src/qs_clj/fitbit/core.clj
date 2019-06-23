@@ -1,6 +1,5 @@
 (ns qs-clj.fitbit.core
   (:require [clojure.string :as str]
-            [clj-http.client :as http]
             [qs-clj.common :as common]
             [qs-clj.data :as data]
             [qs-clj.fitbit.api :as api]
@@ -61,9 +60,8 @@
 (defn api-call
   [{:keys [user-id access-token] :as token} log-type date]
   (let [{:keys [api-version fragment period]} (log-types log-type)
-        date (if period
-               (format "%s/%s" date period)
-               date)
+        date (cond-> date
+                     period (str "/" period))
         url (format "%s/user/%s/%s/date/%s.json"
                     api-version
                     user-id
@@ -89,10 +87,8 @@
   (let [url (format "1/user/%s/badges.json" user-id)]
     (->> (api/authorized-request url token)
          :badges
-         (map :date-time)
-         (map time/local-date)
-         (apply time/min)
-         (time/sql-date))))
+         (map (comp time/local-date :date-time))
+         (apply time/min))))
 
 (comment
   (->> (methods transforms/transform) keys)
