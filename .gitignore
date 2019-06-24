@@ -18,3 +18,5 @@ datomic-console*/
 
 # secrets!
 .env
+
+resources/

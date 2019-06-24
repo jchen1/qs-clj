@@ -1,7 +1,8 @@
 (ns qs-clj.fitbit.api
   (:require [clj-http.client :as http]
+            [clojure.set :as set]
             [qs-clj.common :as common]
-            [clojure.set :as set]))
+            [qs-clj.resource :as resource]))
 
 (def ^:const api-base-url "https://api.fitbit.com")
 
@@ -18,15 +19,21 @@
 
 (defn authorized-request
   [url {:keys [access-token] :as token}]
-  (let [response (http/get (format "%s/%s" api-base-url url)
-                           {:headers              {"Authorization" (format "Bearer %s" access-token)}
-                            :unexceptional-status (set/union http/unexceptional-status? #{429})
-                            :as                   :json})]
+  (let [full-url (format "%s/%s" api-base-url url)
+        cached? (resource/exists? full-url)
+        response (if cached?
+                   (resource/resource full-url)
+                   (http/get (format "%s/%s" api-base-url url)
+                             {:headers              {"Authorization" (format "Bearer %s" access-token)}
+                              :unexceptional-status (set/union http/unexceptional-status? #{429})
+                              :as                   :json}))]
     (case (:status response)
       429 (throw (ex-info "Rate limited" {:retry-after (-> response :headers (get "retry-after") (Integer.))
-                                          :response response}))
-      (->>
-        response
-        :body
-        (common/deep-map-keys common/camel->kebab)))))
+                                          :response    response}))
+      (do
+        (when-not cached? (resource/save full-url (select-keys response [:status :headers :body])))
+        (->>
+          response
+          :body
+          (common/deep-map-keys common/camel->kebab))))))
 
