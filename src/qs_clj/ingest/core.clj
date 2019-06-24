@@ -22,18 +22,17 @@
   (hasch/uuid [provider time]))
 
 (defn- populate-queue-tx
-  ([provider first-date-with-data] (populate-queue-tx provider first-date-with-data (time/local-date)))
-  ([provider first-date-with-data last-date-with-data]
-   {:pre [(time/before? first-date-with-data last-date-with-data)]}
-   (let [dates (->> (time/days 1)
-                    (time/iterate time/plus first-date-with-data)
-                    (take-while #(time/before? % last-date-with-data))
-                    (map time/sql-timestamp))]
-     {:ingest-queue/provider (name provider)
-      :ingest-queue/queue    (->> dates
-                                  (map (fn [date]
-                                         {:ingest-queue-item/date date
-                                          :ingest-queue-item/key  (queue-key provider date)})))})))
+  [provider first-date-with-data last-date-with-data]
+  {:pre [(time/before? first-date-with-data last-date-with-data)]}
+  (let [dates (->> (time/days 1)
+                   (time/iterate time/plus first-date-with-data)
+                   (take-while #(time/before? % last-date-with-data))
+                   (map time/sql-timestamp))]
+    {:ingest-queue/provider (name provider)
+     :ingest-queue/queue    (->> dates
+                                 (map (fn [date]
+                                        {:ingest-queue-item/date date
+                                         :ingest-queue-item/key  (queue-key provider date)})))}))
 
 ;; todo: add last-ingested-date & add new days if necessary
 (defn- maybe-populate-queue
@@ -41,25 +40,22 @@
   (when-let [tokens (oauth/token-for-provider system provider)]
     (when-not (queue-for-provider db provider)
       (let [first-date-with-data (data/first-day-with-data* provider system tokens)
-            tx (populate-queue-tx provider first-date-with-data)]
+            tx (populate-queue-tx provider first-date-with-data (time/zoned-date-time (time/local-date)
+                                                                                      (:user/tz admin-user)))]
         @(d/transact connection [tx])))))
 
 (defn- process-queue-item
   [{:keys [provider connection db admin-user] :as system} {:ingest-queue-item/keys [date key] :as queue-item}]
   (when-let [tokens (oauth/token-for-provider system provider)]
-    (prn "Getting data for day " (-> date
-                                     (time/instant)
-                                     ;; todo...
-                                     (time/zoned-date-time "America/Los_Angeles")
-                                     (->> (time/format "yyyy-MM-dd"))))
-    (let [date (-> date
-                   (time/instant)
-                   ;; todo...
-                   (time/zoned-date-time "America/Los_Angeles")
-                   (->> (time/format "yyyy-MM-dd")))
-          tx (concat (data/data-for-day* provider system tokens date {})
-                     [[:db/retract [:ingest-queue/provider (name provider)] :ingest-queue/queue (:db/id queue-item)]])]
-      @(d/transact connection tx))))
+    (let [date
+          (-> date
+              (time/instant)
+              (time/zoned-date-time (:user/tz admin-user))
+              (->> (time/format "yyyy-MM-dd")))]
+      (prn (format "Getting data for date %s" date))
+      (let [tx (concat (data/data-for-day-tx provider system tokens date {})
+                       [[:db/retract [:ingest-queue/provider (name provider)] :ingest-queue/queue (:db/id queue-item)]])]
+        @(d/transact connection tx)))))
 
 (defn- process-queue
   [{:keys [provider db] :as system}]
@@ -71,7 +67,7 @@
       (process-queue-item system earliest-item-in-queue))))
 
 ;; sleep for 1 min between ingests by default
-(def ^:const default-sleep-time (* 1000 60))
+(def ^:const default-sleep-time (* 1000 5))
 
 (defrecord IngestQueue [provider]
   component/Lifecycle
@@ -91,12 +87,11 @@
                       (maybe-populate-queue system)
                       (process-queue system)
                       (catch Throwable t
-                        (prn t)
-                        (let [data (ex-data t)]
-                          (when-let [retry-after (:retry-after data)]
-                            (vreset! next-sleep-time (* 1000 retry-after))))))
+                        (if-let [retry-after (some-> t ex-cause ex-data :retry-after)]
+                          (vreset! next-sleep-time (* 1000 retry-after))
+                          (prn t))))
                     (try
-                      (prn (format "Sleeping for %s..." @next-sleep-time))
+                      (prn (format "Sleeping for %s seconds..." (/ @next-sleep-time 1000)))
                       (Thread/sleep @next-sleep-time)
                       (catch InterruptedException _
                         (reset! running? false)))))))
@@ -110,6 +105,7 @@
 
 (comment
   (queue-key :provider/fitbit (time/sql-timestamp (time/local-date "2019-03-01")))
+  (time/zoned-date-time "UTC")
   (time/sql-timestamp (time/local-date))
   (->> (time/days 1)
        (time/iterate time/plus (time/local-date "2019-03-01"))

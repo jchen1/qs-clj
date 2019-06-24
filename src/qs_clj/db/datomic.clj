@@ -13,7 +13,8 @@
   (when-let [admin-email (:admin-user-email env)]
     [{:db/id      (d/tempid :db.part/user)
       :user/id    (d/squuid)
-      :user/email admin-email}]))
+      :user/email admin-email
+      :user/tz "America/Los_Angeles"}]))
 
 (defrecord DatomicDatabase [uri initial-data]
   component/Lifecycle
@@ -31,12 +32,15 @@
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
         conn (d/connect uri)]
-    (->> (d/entity (d/db conn) [:ingest-queue/provider "fitbit"])
-         :ingest-queue/queue
-         (into [])
-         (sort-by :ingest-queue-item/date)
-         (map #(into {} %))
-         (take 5)))
+    (into {} (d/entity (d/db conn) [:ingest-queue/provider "fitbit"]))
+    #_(->> (d/entity (d/db conn) [:user/email "hello@jeff.yt"])
+         #_:user/tz
+         :user/provider-data
+         (map :data-date/date)
+         #_#_first
+         :data-date/data
+         #_count
+         #_(map #(into {} %))))
 
   (require '[hasch.core])
 

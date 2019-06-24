@@ -77,21 +77,25 @@
 (defmethod data/data-for-day* :provider/fitbit
   [_ system token day opts]
   (->> (keys log-types)
-       (filter #(contains? (->> (methods transforms/transform) keys set) %))
+       #_(filter #(contains? (->> (methods transforms/transform) keys set) %))
        (pmap #(do [% (api-call token % day)]))
        (mapcat (fn [[type data]] (transforms/transform type system data)))
        (doall)))
 
 (defmethod data/first-day-with-data* :provider/fitbit
-  [_ system {:keys [user-id] :as token}]
+  [_ {:keys [admin-user]} {:keys [user-id] :as token}]
   (let [url (format "1/user/%s/badges.json" user-id)]
     (->> (api/authorized-request url token)
          :badges
-         (map (comp time/local-date :date-time))
+         (map (fn [{:keys [date-time]}]
+                (-> date-time
+                    time/local-date
+                    (time/zoned-date-time (:user/tz admin-user)))))
          (apply time/min)
          (#(time/truncate-to % :days)))))
 
 (comment
+  (time/truncate-to (time/zoned-date-time (time/local-date) "UTC") :days)
   (->> (methods transforms/transform) keys)
   (let [redirect-uri "http://localhost:8080/oauth/fitbit/callback"
         authorize-url (oauth/get-authorize-url :fitbit {} {:redirect-uri redirect-uri})]

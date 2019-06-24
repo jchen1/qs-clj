@@ -13,11 +13,35 @@
     :db/cardinality :db.cardinality/one
     :db/unique :db.unique/identity
     :db/doc "User email"}
+   {:db/ident :user/tz
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "Timezone of the user"}
    {:db/ident :user/oauths
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/many
     :db/isComponent true
-    :db/doc "OAuth data"}])
+    :db/doc "OAuth data"}
+   {:db/ident :user/provider-data
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/many
+    :db/isComponent true
+    :db/doc "Data from providers"}])
+
+(def ^:const data-schema
+  [{:db/ident :data-date/date
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/doc "The date this data is for"}
+   {:db/ident :data-date/id
+    :db/valueType :db.type/uuid
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "dedup key for data-date"}
+   {:db/ident :data-date/data
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/many
+    :db/doc "A giant pile of data"}])
 
 (def ^:const oauth-schema
   [{:db/ident :oauth/active-token
@@ -46,11 +70,7 @@
     :db/doc "Scopes associated with the token"}])
 
 (def ^:const quantity-measurement-schema
-  [{:db/ident :quantity-measurement/user
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one
-    :db/doc "User the measurement belongs to"}
-   {:db/ident :quantity-measurement/type
+  [{:db/ident :quantity-measurement/type
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "Type of the measurement"}
@@ -77,11 +97,7 @@
     :db/doc "Dedup key for measurements"}])
 
 (def ^:const category-measurement-schema
-  [{:db/ident :category-measurement/user
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one
-    :db/doc "User the measurement belongs to"}
-   {:db/ident :category-measurement/type
+  [{:db/ident :category-measurement/type
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "Type of the measurement"}
@@ -130,6 +146,7 @@
 
 (def ^:const schema
   (into [] (concat user-schema
+                   data-schema
                    oauth-schema
                    quantity-measurement-schema
                    category-measurement-schema

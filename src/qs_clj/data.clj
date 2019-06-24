@@ -1,11 +1,21 @@
 (ns qs-clj.data
-  (:require [qs-clj.oauth :as oauth]
+  (:require [datomic.api :as d]
+            [hasch.core :as hasch]
+            [java-time :as time]
+            [qs-clj.oauth :as oauth]
             [ring.util.codec :refer [url-encode]]
-            [ring.util.request :refer [request-url]]
-            [datomic.api :as d]))
+            [ring.util.request :refer [request-url]]))
 
 (defmulti data-for-day* (fn [provider {:keys [admin-user] :as system} {:keys [user-id access-token] :as token} day opts] provider))
 (defmulti first-day-with-data* (fn [provider system token] provider))
+
+(defn data-for-day-tx
+  [provider {:keys [admin-user] :as system} tokens date opts]
+  (let [date (time/sql-date (time/local-date date))]
+    [{:db/id              (:db/id admin-user)
+      :user/provider-data [{:data-date/id   (hasch/uuid [(:db/id admin-user) date])
+                            :data-date/date date
+                            :data-date/data (data-for-day* provider system tokens date opts)}]}]))
 
 (defn load-data-for-day
   [{:keys [admin-user connection query-params] :as system}]
@@ -15,7 +25,7 @@
         day (some->> query-params :day)]
     (if (and provider day)
       (if-let [tokens (oauth/token-for-provider system provider)]
-        (let [result (data-for-day* provider system tokens day {})]
+        (let [result (data-for-day-tx provider system tokens day {})]
           (when-not debug? @(d/transact connection result))
           {:status 200
            :body   result})
