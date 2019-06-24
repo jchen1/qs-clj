@@ -7,6 +7,7 @@
             [ring.middleware.session :refer [wrap-session]]
             [qs-clj.db.datomic :as datomic]
             [qs-clj.fitbit.core :as fitbit]
+            [qs-clj.ingest.core :as ingest]
             [qs-clj.middlewares :as middlewares]
             [qs-clj.routes :as routes]
             [taoensso.timbre :as timbre]))
@@ -40,11 +41,13 @@
 
 (defn ->webserver-system
   [env]
-  (timbre/set-level! (-> (or (:log-level env) "warn") keyword))
+  (timbre/set-level! (-> (or (:log-level env) "info") keyword))
   (let [core-system (component/system-map
                       :db-wrapper (datomic/map->DatomicDatabase {:uri          (or (:datomic-uri env) "datomic:mem://localhost:4334/dev")
                                                                  :initial-data (datomic/initial-data env)})
-                      :fitbit (fitbit/new-client env))]
+                      :fitbit (fitbit/new-client env)
+                      :fitbit-ingest-queue (component/using (ingest/map->IngestQueue (merge env {:provider :provider/fitbit}))
+                                                            [:fitbit :db-wrapper]))]
     (component/system-map
       :core-system core-system
       :webserver (component/using (map->WebServer {:make-handler make-handler

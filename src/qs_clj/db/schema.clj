@@ -109,7 +109,7 @@
 
 (def ingest-queue-schema
   [{:db/ident :ingest-queue/provider
-    :db/valueType :db.type/ref
+    :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db/unique :db.unique/identity
     :db/doc "Data to be ingested for a provider"}

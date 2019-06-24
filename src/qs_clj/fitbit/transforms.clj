@@ -63,12 +63,15 @@
 
 (defn- transform-activity
   [type {:keys [admin-user]} data quantity-type]
-  (let [activity-keyword (keyword (format "activities-%s" type))
-        intraday-keyword (keyword (format "activities-%s-intraday" type))
+  (let [activity-keyword (keyword (format "activities-%s" (name type)))
+        intraday-keyword (keyword (format "activities-%s-intraday" (name type)))
         date (->> data activity-keyword first :date-time)
+        dataset-type (->> data intraday-keyword :dataset-type)
+        dataset-interval (->> data intraday-keyword :dataset-interval)
+        _ (assert (and dataset-type dataset-interval) (format "uh oh: %s %s" type data))
         interval (dataset-type->interval
-                   (->> data intraday-keyword :dataset-type)
-                   (->> data intraday-keyword :dataset-interval))]
+                   dataset-type
+                   dataset-interval)]
     (->> data
          intraday-keyword
          :dataset

@@ -31,18 +31,20 @@
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
         conn (d/connect uri)]
-    (into {} (d/entity (d/db conn) #_[:user/email "hello@jeff.yt"] [:quantity-measurement/key #uuid "2a150458-e515-5f62-aff1-1b6be900ad6d"])))
+    (->> (d/entity (d/db conn) [:ingest-queue/provider "fitbit"])
+         :ingest-queue/queue
+         (into [])
+         (sort-by :ingest-queue-item/date)
+         (map #(into {} %))
+         (take 5)))
+
+  (require '[hasch.core])
 
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
         conn (d/connect uri)
-        tx [{:user/email       "hello@jeff.yt"
-             :user/fitbit-auth {:oauth/active-token            "asdf"
-                                ;; todo do a plus-time
-                                :oauth/active-token-expiration (java.util.Date.)
-                                :oauth/refresh-token           "asdf2"
-                                ;; todo unify all provider namespacing
-                                :oauth/provider                (keyword "provider" (name :fitbit))
-                                :oauth/scopes                  (clojure.string/split "fat weight" #" ")}}]
+        tx [{:ingest-queue/provider "fitbit"
+             :ingest-queue/queue    [{:ingest-queue-item/date (java.util.Date.)
+                                      :ingest-queue-item/key  (hasch.core/uuid)}]}]
         db-after @(d/transact conn tx)]
-    (into {} (:user/fitbit-auth (d/entity (:db-after @(d/transact conn tx)) [:user/email "hello@jeff.yt"])))))
+    (into {} (d/entity (:db-after db-after) [:ingest-queue/provider "fitbit"]))))

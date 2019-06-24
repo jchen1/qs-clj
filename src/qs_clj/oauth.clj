@@ -44,7 +44,7 @@
     (let [callback-uri (provider->callback-uri request provider)
           redirect-uri (some->> query-params :redirect-uri)
           url (get-authorize-url provider request {:callback-uri (url-encode callback-uri)
-                                                   :redirect-uri (url-encode redirect-uri)})]
+                                                   :redirect-uri (when redirect-uri (url-encode redirect-uri))})]
       {:status  302
        :headers {"Location" url}})
     {:status 400

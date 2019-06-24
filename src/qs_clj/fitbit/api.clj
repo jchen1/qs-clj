@@ -16,7 +16,6 @@
        :body
        (common/map-keys common/snake->kabob)))
 
-;; todo: handle rate limits
 (defn authorized-request
   [url {:keys [access-token] :as token}]
   (let [response (http/get (format "%s/%s" api-base-url url)
@@ -24,7 +23,7 @@
                             :unexceptional-status (set/union http/unexceptional-status? #{429})
                             :as                   :json})]
     (case (:status response)
-      429 (throw (ex-info "Rate limited" {:retry-after (->> response :headers "retry-after" (Integer.))
+      429 (throw (ex-info "Rate limited" {:retry-after (-> response :headers (get "retry-after") (Integer.))
                                           :response response}))
       (->>
         response

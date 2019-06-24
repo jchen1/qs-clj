@@ -88,7 +88,8 @@
     (->> (api/authorized-request url token)
          :badges
          (map (comp time/local-date :date-time))
-         (apply time/min))))
+         (apply time/min)
+         (#(time/truncate-to % :days)))))
 
 (comment
   (->> (methods transforms/transform) keys)
