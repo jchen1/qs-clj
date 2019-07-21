@@ -2,9 +2,9 @@
   (:require [com.stuartsierra.component :as component]
             [datomic.api :as d]
             [hasch.core :as hasch]
-            [java-time :as time]
             [qs-clj.data :as data]
             [qs-clj.oauth :as oauth]
+            [qs-clj.time :as time]
             [taoensso.timbre :as log]))
 
 ;; where the magic happens - make api calls and shit
@@ -24,10 +24,10 @@
 (defn- populate-queue-tx
   [provider first-date-with-data last-date-with-data]
   {:pre [(time/before? first-date-with-data last-date-with-data)]}
-  (let [dates (->> (time/days 1)
+  (let [dates (->> (time/period 1 :days)
                    (time/iterate time/plus first-date-with-data)
                    (take-while #(time/before? % last-date-with-data))
-                   (map time/sql-timestamp))]
+                   (map time/->inst))]
     {:ingest-queue/provider (name provider)
      :ingest-queue/queue    (->> dates
                                  (map (fn [date]
@@ -49,9 +49,8 @@
   (when-let [tokens (oauth/token-for-provider system provider)]
     (let [date
           (-> date
-              (time/instant)
               (time/zoned-date-time (:user/tz admin-user))
-              (->> (time/format "yyyy-MM-dd")))]
+              (time/local-date))]
       (prn (format "Getting data for date %s" date))
       (let [tx (concat (data/data-for-day-tx provider system tokens date {})
                        [[:db/retract [:ingest-queue/provider (name provider)] :ingest-queue/queue (:db/id queue-item)]])]
@@ -67,7 +66,7 @@
       (process-queue-item system earliest-item-in-queue))))
 
 ;; sleep for 1 min between ingests by default
-(def ^:const default-sleep-time (* 1000 5))
+(def ^:const default-sleep-time (* 1000 1))
 
 (defrecord IngestQueue [provider]
   component/Lifecycle
@@ -88,11 +87,12 @@
                       (process-queue system)
                       (catch Throwable t
                         (if-let [retry-after (some-> t ex-cause ex-data :retry-after)]
-                          (vreset! next-sleep-time (* 1000 retry-after))
+                          (vreset! next-sleep-time (* 1000 (+ 10 retry-after)))
                           (prn t))))
                     (try
                       (prn (format "Sleeping for %s seconds..." (/ @next-sleep-time 1000)))
                       (Thread/sleep @next-sleep-time)
+                      (vreset! next-sleep-time default-sleep-time)
                       (catch InterruptedException _
                         (reset! running? false)))))))
           thread (-> (Thread. f) .start)]

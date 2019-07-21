@@ -33,4 +33,11 @@
 (comment
   (save "test" {:a :b})
   (-> "resources/0de92508-b44a-5a15-8cf8-f5efbe604b07.edn" slurp edn/read-string)
-  (resource "test"))
+  #_(->> (resource "https://api.fitbit.com/1/user/2HB6VC/activities/calories/date/2015-03-08/1d.json")
+       :body
+       :activities-calories-intraday
+       :dataset
+       (map qs-clj.fitbit.transforms/transform)
+       #_#_#_(map :time)
+       set
+       count))

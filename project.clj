@@ -20,6 +20,7 @@
                  [org.slf4j/log4j-over-slf4j "1.7.14"]
                  [org.slf4j/jul-to-slf4j "1.7.14"]
                  [org.slf4j/jcl-over-slf4j "1.7.14"]
+                 [potemkin "0.4.5"]
                  [ring "1.7.1"]
                  [ring/ring-codec "1.1.2"]
                  [ring/ring-json "0.4.0"]]

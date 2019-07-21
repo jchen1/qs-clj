@@ -75,10 +75,10 @@
    :client-secret fitbit-client-secret})
 
 (defmethod data/data-for-day* :provider/fitbit
-  [_ system token day opts]
+  [_ system token date opts]
   (->> (keys log-types)
        #_(filter #(contains? (->> (methods transforms/transform) keys set) %))
-       (pmap #(do [% (api-call token % day)]))
+       (pmap #(do [% (api-call token % date)]))
        (mapcat (fn [[type data]] (transforms/transform type system data)))
        (doall)))
 

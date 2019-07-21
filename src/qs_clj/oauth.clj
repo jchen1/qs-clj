@@ -1,7 +1,7 @@
 (ns qs-clj.oauth
   (:require [datomic.api :as d]
             [clojure.string :as string]
-            [java-time :as time]
+            [qs-clj.time :as time]
             [ring.util.codec :refer [url-encode url-decode]]))
 
 (defmulti get-authorize-url (fn [provider system {:keys [scopes callback-uri redirect-uri]}] provider))
@@ -14,9 +14,9 @@
 (defn- upsert-token-tx
   [user provider {:keys [access-token expires-in refresh-token user-id scope]}]
   (let [new-oauth {:oauth/active-token            access-token
-                   :oauth/active-token-expiration (-> (time/instant)
+                   :oauth/active-token-expiration (-> (time/now)
                                                       (time/plus (-> expires-in Integer. time/seconds))
-                                                      (time/java-date))
+                                                      (time/->inst))
                    :oauth/refresh-token           refresh-token
                    :oauth/user-id                 user-id
                    :oauth/provider                provider
@@ -80,7 +80,7 @@
                               :user/oauths
                               (filter #(= (:oauth/provider %) provider))
                               first)]
-          (if (time/after? (time/instant) (time/instant (:oauth/active-token-expiration token)))
+          (if (time/after? (time/now) (time/inst->date-time (:oauth/active-token-expiration token)))
             (let [{:keys [db-after]} (exchange-token! system provider {:grant-type    :refresh-token
                                                                        :refresh-token (:oauth/refresh-token token)
                                                                        :callback-uri  (provider->callback-uri system provider)})

@@ -32,10 +32,14 @@
   (let [uri "datomic:mem://localhost:4334/dev"
         _ (create-db uri)
         conn (d/connect uri)]
-    (into {} (d/entity (d/db conn) [:ingest-queue/provider "fitbit"]))
+    (into {} (d/entity (d/db conn) 13194139930008))
+    #_(into {} (d/entity (d/db conn) [:ingest-queue/provider "fitbit"]))
     #_(->> (d/entity (d/db conn) [:user/email "hello@jeff.yt"])
+         :user/oauths
+         first
+         (into {})
          #_:user/tz
-         :user/provider-data
+    #_#_     :user/provider-data
          (map :data-date/date)
          #_#_first
          :data-date/data
